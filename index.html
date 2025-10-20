@@ -249,13 +249,13 @@ I'll never be the same</textarea>
                     <h3>Font Settings</h3>
                     <label for="font-select">Choose Google Font:</label>
                     <select id="font-select">
+                        <option value="Raleway" selected>Raleway</option>
                         <option value="Roboto">Roboto</option>
                         <option value="Open Sans">Open Sans</option>
                         <option value="Lato">Lato</option>
                         <option value="Montserrat">Montserrat</option>
                         <option value="Oswald">Oswald</option>
                         <option value="Source Sans Pro">Source Sans Pro</option>
-                        <option value="Raleway">Raleway</option>
                         <option value="PT Sans">PT Sans</option>
                         <option value="Merriweather">Merriweather</option>
                         <option value="Playfair Display">Playfair Display</option>
@@ -278,6 +278,8 @@ I'll never be the same</textarea>
                         <option value="random-light">Random Light Colors</option>
                         <option value="blue">Blue Tones</option>
                         <option value="purple">Purple Tones</option>
+                        <option value="blues-yellows">Blues and Yellows</option>
+                        <option value="purple-green-blue">Purple Green Blue</option>
                         <option value="rainbow">Rainbow</option>
                         <option value="single">Single Color</option>
                     </select>
@@ -290,6 +292,10 @@ I'll never be the same</textarea>
                     <label for="weight-multiplier" style="margin-top: 15px;">Emphasis Multiplier:</label>
                     <input type="number" id="weight-multiplier" min="1" max="20" value="10" step="1">
                     <p class="info-text">Repeat first sentence this many times for emphasis</p>
+
+                    <label for="spacing" style="margin-top: 15px;">Spacing:</label>
+                    <input type="number" id="spacing" min="1" max="30" value="8" step="1">
+                    <p class="info-text">Adjust space between phrases (higher = more space)</p>
                 </div>
 
                 <div class="button-group">
@@ -306,7 +312,7 @@ I'll never be the same</textarea>
 
     <script>
         let loadedFonts = new Set();
-        let currentFont = 'Roboto';
+        let currentFont = 'Raleway';
 
         // Popular Google Fonts list
         const popularFonts = [
@@ -318,8 +324,85 @@ I'll never be the same</textarea>
             'Righteous', 'Passion One', 'Permanent Marker', 'Creepster', 'Indie Flower'
         ];
 
-        // Load initial font
-        loadFont('Roboto');
+        // Load settings from localStorage
+        function loadSettings() {
+            const settings = JSON.parse(localStorage.getItem('wordcloudSettings') || '{}');
+
+            // Restore text
+            if (settings.messages) {
+                document.getElementById('messages').value = settings.messages;
+            }
+
+            // Restore font
+            if (settings.font) {
+                currentFont = settings.font;
+                loadFont(currentFont);
+                if (!Array.from(document.getElementById('font-select').options).some(opt => opt.value === currentFont)) {
+                    addFontToSelect(currentFont);
+                }
+                document.getElementById('font-select').value = currentFont;
+                updateFontPreview();
+            } else {
+                loadFont('Raleway');
+            }
+
+            // Restore background color
+            if (settings.bgColor) {
+                document.getElementById('bg-color').value = settings.bgColor;
+            }
+
+            // Restore color scheme
+            if (settings.colorScheme) {
+                document.getElementById('color-scheme').value = settings.colorScheme;
+                if (settings.colorScheme === 'single') {
+                    document.getElementById('single-color-picker').style.display = 'block';
+                }
+            }
+
+            // Restore word color
+            if (settings.wordColor) {
+                document.getElementById('word-color').value = settings.wordColor;
+            }
+
+            // Restore emphasis multiplier
+            if (settings.weightMultiplier) {
+                document.getElementById('weight-multiplier').value = settings.weightMultiplier;
+            }
+
+            // Restore spacing
+            if (settings.spacing) {
+                document.getElementById('spacing').value = settings.spacing;
+            }
+        }
+
+        // Save settings to localStorage
+        function saveSettings() {
+            const settings = {
+                messages: document.getElementById('messages').value,
+                font: currentFont,
+                bgColor: document.getElementById('bg-color').value,
+                colorScheme: document.getElementById('color-scheme').value,
+                wordColor: document.getElementById('word-color').value,
+                weightMultiplier: document.getElementById('weight-multiplier').value,
+                spacing: document.getElementById('spacing').value
+            };
+            localStorage.setItem('wordcloudSettings', JSON.stringify(settings));
+        }
+
+        // Add event listeners to save settings on change
+        function setupSettingsSaving() {
+            document.getElementById('messages').addEventListener('input', saveSettings);
+            document.getElementById('font-select').addEventListener('change', saveSettings);
+            document.getElementById('bg-color').addEventListener('change', saveSettings);
+            document.getElementById('color-scheme').addEventListener('change', saveSettings);
+            document.getElementById('word-color').addEventListener('change', saveSettings);
+            document.getElementById('weight-multiplier').addEventListener('change', saveSettings);
+            document.getElementById('spacing').addEventListener('change', saveSettings);
+        }
+
+        // Initialize
+        loadSettings();
+        setupSettingsSaving();
 
         // Font selector change
         document.getElementById('font-select').addEventListener('change', function(e) {
@@ -404,12 +487,20 @@ I'll never be the same</textarea>
                     return colors[Math.floor(Math.random() * colors.length)];
                 },
                 'blue': () => {
-                    const blues = ['#1e3a8a', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'];
+                    const blues = ['#1e3a8a', '#2563eb', '#3b82f6', '#60a5fa'];
                     return blues[Math.floor(Math.random() * blues.length)];
                 },
                 'purple': () => {
-                    const purples = ['#581c87', '#7e22ce', '#9333ea', '#a855f7', '#c084fc'];
+                    const purples = ['#581c87', '#7e22ce', '#9333ea', '#a855f7'];
                     return purples[Math.floor(Math.random() * purples.length)];
+                },
+                'blues-yellows': () => {
+                    const bluesYellows = ['#1e40af', '#2563eb', '#3b82f6', '#60a5fa', '#ca8a04', '#eab308', '#facc15'];
+                    return bluesYellows[Math.floor(Math.random() * bluesYellows.length)];
+                },
+                'purple-green-blue': () => {
+                    const purpleGreenBlue = ['#6b21a8', '#7c3aed', '#8b5cf6', '#059669', '#10b981', '#14b8a6', '#1e40af', '#2563eb', '#3b82f6'];
+                    return purpleGreenBlue[Math.floor(Math.random() * purpleGreenBlue.length)];
                 },
                 'rainbow': () => {
                     const rainbow = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
@@ -432,22 +523,42 @@ I'll never be the same</textarea>
             }
 
             const weightMultiplier = parseInt(document.getElementById('weight-multiplier').value) || 10;
+            const spacing = parseInt(document.getElementById('spacing').value) || 8;
             const bgColor = document.getElementById('bg-color').value;
             const colorScheme = document.getElementById('color-scheme').value;
             const singleColor = document.getElementById('word-color').value;
+
+            // Function to wrap long phrases into multiple lines
+            function wrapPhrase(phrase, maxLength = 30) {
+                const words = phrase.split(' ');
+                const lines = [];
+                let currentLine = '';
+
+                words.forEach(word => {
+                    if ((currentLine + ' ' + word).trim().length <= maxLength) {
+                        currentLine = (currentLine + ' ' + word).trim();
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    }
+                });
+                if (currentLine) lines.push(currentLine);
+
+                return lines.join('\n');
+            }
 
             // Count phrase frequencies
             const phraseCount = {};
 
             // Add emphasized first phrase
-            const firstPhrase = messages[0].trim();
+            const firstPhrase = wrapPhrase(messages[0].trim());
             phraseCount[firstPhrase] = weightMultiplier;
 
-            // Add all phrases
+            // Add all phrases with wrapping
             messages.forEach(phrase => {
-                const trimmedPhrase = phrase.trim();
-                if (trimmedPhrase) {
-                    phraseCount[trimmedPhrase] = (phraseCount[trimmedPhrase] || 0) + 1;
+                const wrappedPhrase = wrapPhrase(phrase.trim());
+                if (wrappedPhrase) {
+                    phraseCount[wrappedPhrase] = (phraseCount[wrappedPhrase] || 0) + 1;
                 }
             });
 
@@ -463,16 +574,21 @@ I'll never be the same</textarea>
             // Generate word cloud
             const colorFunction = getColorScheme(colorScheme, singleColor);
 
+            // Word cloud with text wrapping
             WordCloud(canvas, {
                 list: wordList,
-                gridSize: 8,
+                gridSize: spacing,
                 weightFactor: 20,
                 fontFamily: currentFont,
                 color: colorFunction,
-                rotateRatio: 1,
-                rotationSteps: 4,
+                rotateRatio: 0.5,
+                rotationSteps: 2,
+                minRotation: -Math.PI / 2,
+                maxRotation: 0,
                 backgroundColor: bgColor,
-                minSize: 10
+                minSize: 10,
+                drawOutOfBound: false,
+                shrinkToFit: true
             });
         }
 
