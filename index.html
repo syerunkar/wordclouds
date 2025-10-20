@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Cloud Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #495057;
+            font-size: 1.1em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select, input[type="color"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .canvas-container {
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            padding: 20px;
+            min-height: 600px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #wordcloud-canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #adb5bd;
+            font-size: 1.2em;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .font-preview {
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 24px;
+            min-height: 60px;
+        }
+
+        @media (max-width: 1024px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-text {
+            font-size: 0.9em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            font-style: italic;
+        }
+
+        .loading.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Word Cloud Generator</h1>
+            <p>Create beautiful word clouds with custom fonts and colors</p>
+        </div>
+
+        <div class="content">
+            <div class="controls">
+                <div class="control-group">
+                    <h3>Text Input</h3>
+                    <label for="messages">Enter your text (one sentence per line):</label>
+                    <textarea id="messages" placeholder="Enter sentences, phrases, or words...&#10;One per line">I feel like a ticking time bomb
+just trying to save their license
+They want to create strong women
+I know if a man got a vasectomy he would have Vicodin
+No good doctor will give you grief for coming in
+It is okay to be sad for you at the same time as being happy for them
+I'm angry, but I'm not sure at what or who
+I'm deeply sad
+So I'm in BETA hell
+Lost my left fallopian tube just under 48 hours ago
+Go to the doctor
+Why were they not able to save my tube?
+The birth control failed
+Worst pain in my life
+I'm in a haze
+I'll never be the same</textarea>
+                </div>
+
+                <div class="control-group">
+                    <h3>Font Settings</h3>
+                    <label for="font-select">Choose Google Font:</label>
+                    <select id="font-select">
+                        <option value="Roboto">Roboto</option>
+                        <option value="Open Sans">Open Sans</option>
+                        <option value="Lato">Lato</option>
+                        <option value="Montserrat">Montserrat</option>
+                        <option value="Oswald">Oswald</option>
+                        <option value="Source Sans Pro">Source Sans Pro</option>
+                        <option value="Raleway">Raleway</option>
+                        <option value="PT Sans">PT Sans</option>
+                        <option value="Merriweather">Merriweather</option>
+                        <option value="Playfair Display">Playfair Display</option>
+                    </select>
+                    <p class="info-text loading" id="font-loading">Loading font...</p>
+                    <div class="font-preview" id="font-preview">The quick brown fox</div>
+                    <p class="info-text">Type to load more fonts:</p>
+                    <input type="text" id="custom-font" placeholder="e.g., Pacifico, Dancing Script, Bebas Neue"
+                           style="margin-top: 10px;">
+                </div>
+
+                <div class="control-group">
+                    <h3>Appearance</h3>
+                    <label for="bg-color">Background Color:</label>
+                    <input type="color" id="bg-color" value="#ffffff">
+
+                    <label for="color-scheme" style="margin-top: 15px;">Word Color Scheme:</label>
+                    <select id="color-scheme">
+                        <option value="random-dark">Random Dark Colors</option>
+                        <option value="random-light">Random Light Colors</option>
+                        <option value="blue">Blue Tones</option>
+                        <option value="purple">Purple Tones</option>
+                        <option value="rainbow">Rainbow</option>
+                        <option value="single">Single Color</option>
+                    </select>
+
+                    <div id="single-color-picker" style="display: none; margin-top: 10px;">
+                        <label for="word-color">Word Color:</label>
+                        <input type="color" id="word-color" value="#667eea">
+                    </div>
+
+                    <label for="weight-multiplier" style="margin-top: 15px;">Emphasis Multiplier:</label>
+                    <input type="number" id="weight-multiplier" min="1" max="20" value="10" step="1">
+                    <p class="info-text">Repeat first sentence this many times for emphasis</p>
+                </div>
+
+                <div class="button-group">
+                    <button onclick="generateWordCloud()">Generate</button>
+                    <button onclick="downloadWordCloud()" class="secondary">Download</button>
+                </div>
+            </div>
+
+            <div class="canvas-container">
+                <canvas id="wordcloud-canvas" width="800" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loadedFonts = new Set();
+        let currentFont = 'Roboto';
+
+        // Popular Google Fonts list
+        const popularFonts = [
+            'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Source Sans Pro',
+            'Raleway', 'PT Sans', 'Merriweather', 'Playfair Display', 'Ubuntu',
+            'Poppins', 'Nunito', 'Mukta', 'Rubik', 'Work Sans', 'Inter', 'Noto Sans',
+            'Roboto Condensed', 'Roboto Slab', 'Crimson Text', 'Libre Baskerville',
+            'Pacifico', 'Dancing Script', 'Bebas Neue', 'Anton', 'Abril Fatface',
+            'Righteous', 'Passion One', 'Permanent Marker', 'Creepster', 'Indie Flower'
+        ];
+
+        // Load initial font
+        loadFont('Roboto');
+
+        // Font selector change
+        document.getElementById('font-select').addEventListener('change', function(e) {
+            currentFont = e.target.value;
+            loadFont(currentFont);
+            updateFontPreview();
+        });
+
+        // Custom font input
+        document.getElementById('custom-font').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const fontName = e.target.value.trim();
+                if (fontName) {
+                    loadFont(fontName);
+                    addFontToSelect(fontName);
+                    document.getElementById('font-select').value = fontName;
+                    currentFont = fontName;
+                    updateFontPreview();
+                    e.target.value = '';
+                }
+            }
+        });
+
+        // Color scheme change
+        document.getElementById('color-scheme').addEventListener('change', function(e) {
+            const singleColorPicker = document.getElementById('single-color-picker');
+            if (e.target.value === 'single') {
+                singleColorPicker.style.display = 'block';
+            } else {
+                singleColorPicker.style.display = 'none';
+            }
+        });
+
+        function loadFont(fontName) {
+            if (loadedFonts.has(fontName)) return;
+
+            const fontLoading = document.getElementById('font-loading');
+            fontLoading.classList.add('active');
+
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = `https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g, '+')}:wght@400;700&display=swap`;
+
+            link.onload = () => {
+                loadedFonts.add(fontName);
+                fontLoading.classList.remove('active');
+            };
+
+            link.onerror = () => {
+                fontLoading.classList.remove('active');
+                alert(`Could not load font: ${fontName}. Please check the font name.`);
+            };
+
+            document.head.appendChild(link);
+        }
+
+        function addFontToSelect(fontName) {
+            const select = document.getElementById('font-select');
+            const exists = Array.from(select.options).some(option => option.value === fontName);
+
+            if (!exists) {
+                const option = document.createElement('option');
+                option.value = fontName;
+                option.textContent = fontName;
+                select.appendChild(option);
+            }
+        }
+
+        function updateFontPreview() {
+            const preview = document.getElementById('font-preview');
+            preview.style.fontFamily = `'${currentFont}', sans-serif`;
+        }
+
+        function getColorScheme(scheme, singleColor) {
+            const schemes = {
+                'random-dark': () => {
+                    const colors = ['#2c3e50', '#34495e', '#7f8c8d', '#95a5a6', '#c0392b', '#e74c3c', '#d35400', '#e67e22'];
+                    return colors[Math.floor(Math.random() * colors.length)];
+                },
+                'random-light': () => {
+                    const colors = ['#3498db', '#9b59b6', '#e74c3c', '#f39c12', '#16a085', '#2ecc71', '#e67e22'];
+                    return colors[Math.floor(Math.random() * colors.length)];
+                },
+                'blue': () => {
+                    const blues = ['#1e3a8a', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd'];
+                    return blues[Math.floor(Math.random() * blues.length)];
+                },
+                'purple': () => {
+                    const purples = ['#581c87', '#7e22ce', '#9333ea', '#a855f7', '#c084fc'];
+                    return purples[Math.floor(Math.random() * purples.length)];
+                },
+                'rainbow': () => {
+                    const rainbow = ['#ef4444', '#f97316', '#f59e0b', '#10b981', '#3b82f6', '#6366f1', '#8b5cf6', '#ec4899'];
+                    return rainbow[Math.floor(Math.random() * rainbow.length)];
+                },
+                'single': () => singleColor
+            };
+
+            return schemes[scheme] || schemes['random-dark'];
+        }
+
+        function generateWordCloud() {
+            const messages = document.getElementById('messages').value
+                .split('\n')
+                .filter(line => line.trim() !== '');
+
+            if (messages.length === 0) {
+                alert('Please enter some text!');
+                return;
+            }
+
+            const weightMultiplier = parseInt(document.getElementById('weight-multiplier').value) || 10;
+            const bgColor = document.getElementById('bg-color').value;
+            const colorScheme = document.getElementById('color-scheme').value;
+            const singleColor = document.getElementById('word-color').value;
+
+            // Count phrase frequencies
+            const phraseCount = {};
+
+            // Add emphasized first phrase
+            const firstPhrase = messages[0].trim();
+            phraseCount[firstPhrase] = weightMultiplier;
+
+            // Add all phrases
+            messages.forEach(phrase => {
+                const trimmedPhrase = phrase.trim();
+                if (trimmedPhrase) {
+                    phraseCount[trimmedPhrase] = (phraseCount[trimmedPhrase] || 0) + 1;
+                }
+            });
+
+            // Convert to list format for wordcloud2
+            const wordList = Object.entries(phraseCount);
+
+            // Get canvas and set background
+            const canvas = document.getElementById('wordcloud-canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = bgColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Generate word cloud
+            const colorFunction = getColorScheme(colorScheme, singleColor);
+
+            WordCloud(canvas, {
+                list: wordList,
+                gridSize: 8,
+                weightFactor: 20,
+                fontFamily: currentFont,
+                color: colorFunction,
+                rotateRatio: 1,
+                rotationSteps: 2,
+                backgroundColor: bgColor,
+                minSize: 10,
+                shuffle: true,
+                random: function() {
+                    return 0.5;
+                }
+            });
+        }
+
+        function downloadWordCloud() {
+            const canvas = document.getElementById('wordcloud-canvas');
+            const link = document.createElement('a');
+            link.download = 'wordcloud.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Generate initial word cloud
+        window.addEventListener('load', () => {
+            setTimeout(generateWordCloud, 500);
+        });
+    </script>
+</body>
+</html>
